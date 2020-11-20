@@ -181,6 +181,8 @@ class SVC(BaseEstimator):
 
         if self.predict_proba:
             X_log = self.decision_function(self.X).reshape(-1, 1)
+            self.std = StandardScaler().fit(X_log)
+            X_log = self.std.transform(X_log)
             self.logistic_model = LogisticRegression(solver='lbfgs').fit(X_log, self.Y)
 
         return self
@@ -195,6 +197,7 @@ class SVC(BaseEstimator):
 
     def predict_proba(self, X):
         X_log = self.decision_function(X).reshape(-1, 1)
+        X_log = self.std.transform(X_log)
         return self.logistic_model.predict_proba(X_log)
 
     def predict(self, X):
@@ -218,8 +221,9 @@ if __name__ == '__main__':
     X = data['data']
     Y = data['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3,
-                                                    random_state=10
+                                                    random_state=41
                                                     )
+    # random_state = 10, last one is very high
     model = SVC(gaussian_kernel=False, predict_probability=False, normalize=False)
     model.fit(Xtrain, Ytrain)
     print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
