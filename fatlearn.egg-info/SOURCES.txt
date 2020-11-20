@@ -1,0 +1,11 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+fakesklearn/__init__.py
+fakesklearn/ensemble.py
+fakesklearn/svm.py
+fatlearn.egg-info/PKG-INFO
+fatlearn.egg-info/SOURCES.txt
+fatlearn.egg-info/dependency_links.txt
+fatlearn.egg-info/top_level.txt

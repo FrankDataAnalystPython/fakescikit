@@ -1,0 +1,5 @@
+After the setup.py and structure is done, then we could try the following to install locally
+
+pip install .
+
+If successfully, we couild start publishing on PyPi
