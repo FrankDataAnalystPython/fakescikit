@@ -7,7 +7,7 @@ from fakesklearn import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print('For Regression Methods, the RandomForest, GBDT are used for the Boston DataSets')
+    print('For Regression Methods, the RandomForest, GBDT, Rdige are used for the Boston DataSets')
     print('The following are the results')
     boston = load_boston()
     X = boston['data']
@@ -19,19 +19,24 @@ if __name__ == '__main__':
     GBR_train_score, GBR_test_score = np.around(GBR.score(Xtrain, Ytrain), 2), np.around(GBR.score(Xtest, Ytest), 2)
     RFR = RandomForestRegressor(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
     RFR_train_score, RFR_test_score = np.around(RFR.score(Xtrain, Ytrain), 2), np.around(RFR.score(Xtest, Ytest), 2)
-    result_rgr = pd.DataFrame({'Train_R2' : [RFR_train_score, GBR_train_score],
-                           'Test_R2' : [RFR_test_score, GBR_test_score]})
-    result_rgr.index = ['RandomForest', 'GBDT']
+    ridge = Ridge().fit(Xtrain, Ytrain)
+    ridge_train_score, ridge_test_score = np.around(ridge.score(Xtrain, Ytrain), 2), np.around(ridge.score(Xtest, Ytest), 2)
+    result_rgr = pd.DataFrame({'Train_R2' : [RFR_train_score, GBR_train_score, ridge_train_score],
+                           'Test_R2' : [RFR_test_score, GBR_test_score, ridge_test_score]})
+    result_rgr.index = ['RandomForest', 'GBDT', 'RidgeRegression']
     print('\n')
     print('=======================================================================================')
     print(result_rgr)
     print('=======================================================================================')
     print('\n')
-    print('For Classification methods, the Adaboost, RandomForest, GBDT, SVM are used for the breast cancer Datasets')
+    print('For Classification methods, the LogisticRegression, Adaboost, RandomForest, GBDT, SVM are used for the breast cancer Datasets')
     bc = load_breast_cancer()
     X = bc['data']
     Y = bc['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state = 42)
+
+    LogR = LogisticRegression().fit(Xtrain, Ytrain)
+    LogR_train_score, LogR_test_score = np.around(LogR.score(Xtrain, Ytrain), 2), np.around(LogR.score(Xtest, Ytest), 2)
 
     RFC = RandomForestClassifer(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
     RFC_train_score, RFC_test_score = np.around(RFC.score(Xtrain, Ytrain), 2), np.around(RFC.score(Xtest, Ytest))
@@ -45,15 +50,21 @@ if __name__ == '__main__':
     svc = SVC(gamma = 1e2).fit(Xtrain, Ytrain)
     svc_train_score, svc_test_score = np.around(svc.score(Xtrain, Ytrain), 2), np.around(svc.score(Xtest, Ytest))
 
-    result_clf = pd.DataFrame({'Train_acc': [RFC_train_score, ADC_train_score, GBC_train_score, svc_train_score],
-                               'Test_acc' : [RFC_test_score,  ADC_test_score,  GBC_test_score,  svc_test_score ]
+    result_clf = pd.DataFrame({'Train_acc': [LogR_train_score, RFC_train_score, ADC_train_score, GBC_train_score, svc_train_score],
+                               'Test_acc' : [LogR_test_score,  RFC_test_score, ADC_test_score,  GBC_test_score,  svc_test_score ]
                                })
 
-    result_clf.index = ['RandomForest', 'AdaBoost', 'GBDT', 'SVM']
+    result_clf.index = ['LogisticRegression', 'RandomForest', 'AdaBoost', 'GBDT', 'SVM']
     print('\n')
     print('=======================================================================================')
     print(result_clf)
     print('=======================================================================================')
     print('\n')
     print('done')
+
+
+
+
+from sklearn.linear_model import Perceptron
+
 

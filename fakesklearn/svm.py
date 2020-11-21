@@ -19,7 +19,7 @@ class SVC(BaseEstimator):
     def __init__(self, gamma=1e-3,
                  tol=1e-3, epsilon=1e-3,
                  gaussian_kernel=True,
-                 max_itera=500, C=1,
+                 max_iter=500, C=1,
                  predict_probability=True,
                  normalize=True
                  ):
@@ -28,7 +28,7 @@ class SVC(BaseEstimator):
         self.tol = tol
         self.epsilon = epsilon
         self.gaussian_kernel = gaussian_kernel
-        self.max_itera = max_itera
+        self.max_iter = max_iter
         self.C = C
         self.predict_probability = predict_probability
         self.normalize = normalize
@@ -171,7 +171,7 @@ class SVC(BaseEstimator):
         self.init_params(X, Y)
         finish = False
         self.step = 0
-        while (self.step <= self.max_itera) and (not finish):
+        while (self.step <= self.max_iter) and (not finish):
             self.step += 1
             margin_points_idx = np.where((self.a > 0) & (self.a < 0))[0]
             if len(margin_points_idx) > 0:
