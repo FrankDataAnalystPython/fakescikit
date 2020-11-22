@@ -141,7 +141,8 @@ class LogisticRegression(BaseEstimator):
         self.std = StandardScaler().fit(self.X)
         self.X = self.std.transform(self.X)
         self.W = np.mat(np.zeros((self.X.shape[1] + 1, 1)))
-        self.delta_dict = {'sag' : self.SAG}
+        self.delta_dict = {'sag' : self.SAG,
+                           'newton' : self.Newton}
 
     def add_ones(self, X):
         if self.fit_intercept:
@@ -153,12 +154,33 @@ class LogisticRegression(BaseEstimator):
         z = X * w
         return 1/(1 + np.exp(-z))
 
+    def cal_sigmoid_error(self, X, Y):
+        sigmod_result = self.sigmod(X, self.W)
+        error = sigmod_result - Y
+        return error, sigmod_result
+
     def SAG(self, X, Y):
-        j = np.random.choice(range(X.shape[0]), 32)
-        X_j, Y_j = X[j], Y[j]
-        error = self.sigmod(X_j, self.W) - Y_j
+        if self.solver == 'sag':
+            j = np.random.choice(range(X.shape[0]), 32)
+            X_j, Y_j = X[j], Y[j]
+        else:
+            X_j, Y_j = X, Y
+        error, sigmod_result = self.cal_sigmoid_error(X_j, Y_j)
         gd = 1/X.shape[0] * (X_j.T * error + self.C * self.W)
-        return gd
+        if self.solver == 'sag':
+            return gd
+        elif self.solver == 'newton':
+            return gd, sigmod_result
+
+    def Hessian(self, X, sigmod_result):
+        sigmod_result = np.ravel(sigmod_result)
+        B = np.diag(sigmod_result)
+        return 1/X.shape[0] * X.T * B * X + self.C * np.eye(X.shape[1])
+
+    def Newton(self, X, Y):
+        gd, sigmod_result = self.SAG(X, Y)
+        H = self.Hessian(X, sigmod_result)
+        return H.I * gd
 
     def fit(self, X, Y):
         self.init_params(X, Y)
@@ -171,13 +193,17 @@ class LogisticRegression(BaseEstimator):
             delta = self.delta_dict[self.solver](tmp_X, tmp_Y)
             while delta.T * delta < self.tol:
                 break
-            self.W -= self.learning_rate * delta
+            if self.solver == 'sag':
+                self.W -= self.learning_rate * delta
+            elif self.solver == 'newton':
+                self.W -= delta
 
         if self.fit_intercept:
             self.coef_ = np.ravel(self.W)[1:]
             self.intercept_ = np.ravel(self.W)[0]
         else:
             self.coef_ = self.W
+        self.iterations = steps
         return self
 
     def predict_proba(self, X):
@@ -208,13 +234,13 @@ if __name__ == '__main__':
     ridge = Ridge(max_iter = 5000, solver = 'Mini', learning_rate = 0.1, alpha = 0.5).fit(Xtrain, Ytrain)
     print(ridge.score(Xtrain, Ytrain), ridge.score(Xtest, Ytest))
 
-    # bc = load_breast_cancer()
-    bc = load_digits(n_class=2)
+    bc = load_breast_cancer()
+    # bc = load_digits(n_class=2)
     X = bc['data']
     Y = bc['target']
-    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state=420)
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state=46)
 
-    LogR = LogisticRegression(C = 1).fit(Xtrain, Ytrain)
-    print(LogR.score(Xtrain, Ytrain), LogR.score(Xtest, Ytest))
+    LogR = LogisticRegression(C = 1, solver = 'newton', max_iter = 5000).fit(Xtrain, Ytrain)
+    print(LogR.score(Xtrain, Ytrain), LogR.score(Xtest, Ytest), LogR.iterations)
 
     print('done')

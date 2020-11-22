@@ -35,7 +35,7 @@ if __name__ == '__main__':
     Y = bc['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state = 42)
 
-    LogR = LogisticRegression().fit(Xtrain, Ytrain)
+    LogR = LogisticRegression(solver = 'newton', max_iter = 5000).fit(Xtrain, Ytrain)
     LogR_train_score, LogR_test_score = np.around(LogR.score(Xtrain, Ytrain), 2), np.around(LogR.score(Xtest, Ytest), 2)
 
     RFC = RandomForestClassifer(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
@@ -61,10 +61,4 @@ if __name__ == '__main__':
     print('=======================================================================================')
     print('\n')
     print('done')
-
-
-
-
-from sklearn.linear_model import Perceptron
-
 
