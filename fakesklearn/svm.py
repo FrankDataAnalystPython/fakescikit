@@ -179,7 +179,7 @@ class SVC(BaseEstimator):
             else:
                 finish = self.iterate(range(self.N))
 
-        if self.predict_proba:
+        if self.predict_probability:
             X_log = self.decision_function(self.X).reshape(-1, 1)
             self.std = StandardScaler().fit(X_log)
             X_log = self.std.transform(X_log)
