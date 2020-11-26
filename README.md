@@ -1,3 +1,1 @@
-This is a package I developed in order to study ensemble methods and SVM SMO.
-
-The packages here are very much like sklearn, run the main.py to have a check.
+This is a fakesklearn which is a Machine Learning package, just like sklearn, but a fake one. All methods are developed by myself.
