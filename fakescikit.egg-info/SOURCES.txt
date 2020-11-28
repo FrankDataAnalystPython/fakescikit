@@ -1,0 +1,12 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+fakescikit.egg-info/PKG-INFO
+fakescikit.egg-info/SOURCES.txt
+fakescikit.egg-info/dependency_links.txt
+fakescikit.egg-info/top_level.txt
+fakesklearn/__init__.py
+fakesklearn/ensemble.py
+fakesklearn/linear_model.py
+fakesklearn/svm.py

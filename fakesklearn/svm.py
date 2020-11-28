@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 # e.g. the following is wrong
 # self.max_D = max_depth
 class SVC(BaseEstimator):
-    def __init__(self, gamma=1e-3,
+    def __init__(self, gamma=1e-2,
                  tol=1e-3, epsilon=1e-3,
                  gaussian_kernel=True,
                  max_iter=500, C=1,
@@ -220,9 +220,8 @@ if __name__ == '__main__':
     data = load_breast_cancer()
     X = data['data']
     Y = data['target']
-    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3,
-                                                    random_state=41
-                                                    )
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3,random_state=42)
+
     # random_state = 10, last one is very high
     model = SVC(gaussian_kernel=False, predict_probability=False, normalize=False)
     model.fit(Xtrain, Ytrain)
@@ -244,6 +243,3 @@ if __name__ == '__main__':
     model_std = SVC(gaussian_kernel=True, predict_probability=True, normalize=True)
     model_std.fit(Xtrain, Ytrain)
     print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
-
-
-from sklearn.svm import SVR

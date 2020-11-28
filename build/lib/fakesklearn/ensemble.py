@@ -12,6 +12,8 @@ import warnings
 #warnings.filterwarnings("ignore")
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer, load_boston
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
 class GBDTRegressor(BaseEstimator):
     def __init__(self,
@@ -434,6 +436,102 @@ class RandomForestClassifer(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
+class AdaBoostClassifer(BaseEstimator):
+    def __init__(self,
+                 n_estimators=100,
+                 subsample=1.0,
+                 criterion='gini',
+                 min_samples_split=2,
+                 min_samples_leaf=1,
+                 min_weight_fraction_leaf=0.,
+                 max_depth=5,
+                 min_impurity_decrease=0.,
+                 min_impurity_split=None,
+                 random_state=None,
+                 max_features=None,
+                 max_leaf_nodes=None,
+                 presort='deprecated',
+                 ):
+
+        super().__init__()
+        self.random_state = random_state
+        self.n_estimators = n_estimators
+        self.subsample = subsample
+        self.criterion = criterion
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
+        self.subsample = subsample
+        self.max_features = max_features
+        self.max_depth = max_depth
+        self.min_impurity_decrease = min_impurity_decrease
+        self.min_impurity_split = min_impurity_split
+        self.random_state = random_state
+        self.max_leaf_nodes = max_leaf_nodes
+        self.presort = presort
+
+
+    def init_params(self, X, Y):
+        self.X = X.copy()
+        self.Y = Y.copy()
+        self.Y[self.Y == 0] = -1
+        if self.random_state is None:
+            self.random_state = int(time.time())
+
+        estimator_params = ("criterion", "max_depth", "min_samples_split",
+                            "min_samples_leaf", "min_weight_fraction_leaf",
+                            "max_features", "max_leaf_nodes",
+                            "min_impurity_decrease", "min_impurity_split",
+                            "random_state")
+        self.base_estimator_ = DecisionTreeClassifier(**{p: getattr(self, p)
+                                                        for p in estimator_params
+                                                        })
+        self.rng = np.random.RandomState(self.random_state)
+        seed_list = self.rng.choice(range(10000), size=self.n_estimators,
+                                    replace=True
+                                    )
+        self.estimators_ = [clone(self.base_estimator_.set_params(random_state=i))
+                            for i in seed_list]
+
+        N = self.X.shape[0]
+        self.weight = 1/N * np.ones(N)
+        self.coef_list_ = []
+
+    def fit(self, X, Y):
+        self.init_params(X, Y)
+        for model in self.estimators_:
+            model.fit(self.X, self.Y, sample_weight = self.weight)
+            error = 1 -  model.score(self.X, self.Y, sample_weight = self.weight)
+            ada_coef_ = 0.5 * np.log((1 - error)/error)
+
+            self.coef_list_.append(ada_coef_)
+            Sample_wrong = (model.predict(self.X) != self.Y)
+
+            coef_wrong = 0.5 / self.weight[Sample_wrong].sum()
+            self.weight[Sample_wrong] = self.weight[Sample_wrong] * coef_wrong
+            coef_right = 0.5 / self.weight[~Sample_wrong].sum()
+            self.weight[~Sample_wrong]= self.weight[~Sample_wrong]* coef_right
+
+        self.feature_importances_ = np.array([i.feature_importances_ for i in self.estimators_]).mean(axis=0)
+        X_log = (np.array(self.coef_list_) @ np.array([i.predict(self.X) for i in self.estimators_])).reshape(-1, 1)
+        self.std = StandardScaler().fit(X_log)
+        X_log = self.std.transform(X_log)
+        self.logistic_model = LogisticRegression().fit(X_log, self.Y)
+        return self
+
+    def predict_proba(self, X):
+        X_log = (np.array(self.coef_list_) @ np.array([i.predict(X) for i in self.estimators_])).reshape(-1, 1)
+        X_log = self.std.transform(X_log)
+        return self.logistic_model.predict_proba(X_log)
+
+    def predict(self, X):
+        return self.predict_proba(X).argmax(axis = 1)
+
+    def score(self, X, Y):
+        Y_pred = self.predict(X)
+        return accuracy_score(Y, Y_pred)
+
+
 
 if __name__ == '__main__':
     boston = load_boston()
@@ -465,6 +563,11 @@ if __name__ == '__main__':
                              random_state=42)
     gbdtclf = gbdtclf.fit(Xtrain, Ytrain)
     print(gbdtclf.score(Xtrain, Ytrain), gbdtclf.score(Xtest, Ytest))
+
+
+    adc = AdaBoostClassifer(max_depth = 5, n_estimators = 100)
+    adc = adc.fit(Xtrain, Ytrain)
+    print(adc.score(Xtrain, Ytrain), adc.score(Xtest, Ytest))
 
     print('done')
 

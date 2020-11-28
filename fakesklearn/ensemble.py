@@ -349,7 +349,7 @@ class RandomForestRegressor(BaseEstimator):
         Y_pred = self.predict(X)
         return r2_score(Y, Y_pred)
 
-class RandomForestClassifer(BaseEstimator):
+class RandomForestClassifier(BaseEstimator):
     def __init__(self,
                  n_estimators=100,
                  subsample=1.0,
@@ -436,7 +436,7 @@ class RandomForestClassifer(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class AdaBoostClassifer(BaseEstimator):
+class AdaBoostClassifier(BaseEstimator):
     def __init__(self,
                  n_estimators=100,
                  subsample=1.0,
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     Y = bc['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state = 42)
 
-    rfc = RandomForestClassifer(max_depth=5, n_estimators=100, subsample=0.9)
+    rfc = RandomForestClassifier(max_depth=5, n_estimators=100, subsample=0.9)
     rfc = rfc.fit(Xtrain, Ytrain)
     print(rfc.score(Xtrain, Ytrain), rfc.score(Xtest, Ytest))
 
@@ -565,7 +565,7 @@ if __name__ == '__main__':
     print(gbdtclf.score(Xtrain, Ytrain), gbdtclf.score(Xtest, Ytest))
 
 
-    adc = AdaBoostClassifer(max_depth = 5, n_estimators = 100)
+    adc = AdaBoostClassifier(max_depth = 5, n_estimators = 100)
     adc = adc.fit(Xtrain, Ytrain)
     print(adc.score(Xtrain, Ytrain), adc.score(Xtest, Ytest))
 

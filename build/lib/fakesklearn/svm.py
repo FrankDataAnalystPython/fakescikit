@@ -19,7 +19,7 @@ class SVC(BaseEstimator):
     def __init__(self, gamma=1e-3,
                  tol=1e-3, epsilon=1e-3,
                  gaussian_kernel=True,
-                 max_itera=500, C=1,
+                 max_iter=500, C=1,
                  predict_probability=True,
                  normalize=True
                  ):
@@ -28,7 +28,7 @@ class SVC(BaseEstimator):
         self.tol = tol
         self.epsilon = epsilon
         self.gaussian_kernel = gaussian_kernel
-        self.max_itera = max_itera
+        self.max_iter = max_iter
         self.C = C
         self.predict_probability = predict_probability
         self.normalize = normalize
@@ -171,7 +171,7 @@ class SVC(BaseEstimator):
         self.init_params(X, Y)
         finish = False
         self.step = 0
-        while (self.step <= self.max_itera) and (not finish):
+        while (self.step <= self.max_iter) and (not finish):
             self.step += 1
             margin_points_idx = np.where((self.a > 0) & (self.a < 0))[0]
             if len(margin_points_idx) > 0:
@@ -179,8 +179,10 @@ class SVC(BaseEstimator):
             else:
                 finish = self.iterate(range(self.N))
 
-        if self.predict_proba:
+        if self.predict_probability:
             X_log = self.decision_function(self.X).reshape(-1, 1)
+            self.std = StandardScaler().fit(X_log)
+            X_log = self.std.transform(X_log)
             self.logistic_model = LogisticRegression(solver='lbfgs').fit(X_log, self.Y)
 
         return self
@@ -195,6 +197,7 @@ class SVC(BaseEstimator):
 
     def predict_proba(self, X):
         X_log = self.decision_function(X).reshape(-1, 1)
+        X_log = self.std.transform(X_log)
         return self.logistic_model.predict_proba(X_log)
 
     def predict(self, X):
@@ -218,8 +221,9 @@ if __name__ == '__main__':
     X = data['data']
     Y = data['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3,
-                                                    random_state=10
+                                                    random_state=41
                                                     )
+    # random_state = 10, last one is very high
     model = SVC(gaussian_kernel=False, predict_probability=False, normalize=False)
     model.fit(Xtrain, Ytrain)
     print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))

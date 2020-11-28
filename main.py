@@ -41,17 +41,17 @@ if __name__ == '__main__':
     Perp = Perceptron(gaussian_kernel=True, predict_probability=False).fit(Xtrain, Ytrain)
     Perp_train_score, Perp_test_score = np.around(Perp.score(Xtrain, Ytrain), 2), np.around(Perp.score(Xtest, Ytest), 2)
 
-    RFC = RandomForestClassifer(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
+    RFC = RandomForestClassifier(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
     RFC_train_score, RFC_test_score = np.around(RFC.score(Xtrain, Ytrain), 2), np.around(RFC.score(Xtest, Ytest))
 
-    ADC = AdaBoostClassifer(max_depth = 3, n_estimators = 100).fit(Xtrain, Ytrain)
+    ADC = AdaBoostClassifier(max_depth = 3, n_estimators = 100).fit(Xtrain, Ytrain)
     ADC_train_score, ADC_test_score = np.around(ADC.score(Xtrain, Ytrain), 2), np.around(ADC.score(Xtest, Ytest))
 
     GBC = GBDTClassifier(max_depth = 7, n_estimators = 100, learning_rate = 0.1, subsample = 0.85).fit(Xtrain, Ytrain)
     GBC_train_score, GBC_test_score = np.around(GBC.score(Xtrain, Ytrain), 2), np.around(GBC.score(Xtest, Ytest))
 
-    svc = SVC(gamma = 1e2).fit(Xtrain, Ytrain)
-    svc_train_score, svc_test_score = np.around(svc.score(Xtrain, Ytrain), 2), np.around(svc.score(Xtest, Ytest))
+    svc = SVC(gamma = 1e-2).fit(Xtrain, Ytrain)
+    svc_train_score, svc_test_score = np.around(svc.score(Xtrain, Ytrain), 2), np.around(svc.score(Xtest, Ytest), 2)
 
     result_clf = pd.DataFrame({'Train_acc': [LogR_train_score, Perp_train_score, RFC_train_score, ADC_train_score, GBC_train_score, svc_train_score],
                                'Test_acc' : [LogR_test_score,  Perp_test_score, RFC_test_score, ADC_test_score,  GBC_test_score,  svc_test_score ]
