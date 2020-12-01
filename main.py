@@ -1,7 +1,7 @@
 #Author : Xiangyang Ni
 #Email  : frank935460794@live.com
 
-from sklearn.datasets import load_breast_cancer, load_boston
+from sklearn.datasets import load_breast_cancer, load_boston, load_wine
 from sklearn.model_selection import train_test_split
 from fakesklearn import *
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     print('=======================================================================================')
     print('\n')
     print('For Classification methods, the LogisticRegression, Adaboost, RandomForest, GBDT, SVM are used for the breast cancer Datasets')
-    bc = load_breast_cancer()
+    bc = load_wine()
     X = bc['data']
     Y = bc['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, random_state = 42)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     RFC = RandomForestClassifier(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)
     RFC_train_score, RFC_test_score = np.around(RFC.score(Xtrain, Ytrain), 2), np.around(RFC.score(Xtest, Ytest))
 
-    ADC = AdaBoostClassifier(max_depth = 3, n_estimators = 100).fit(Xtrain, Ytrain)
+    ADC = AdaBoostClassifier(max_depth = 2, n_estimators = 100).fit(Xtrain, Ytrain)
     ADC_train_score, ADC_test_score = np.around(ADC.score(Xtrain, Ytrain), 2), np.around(ADC.score(Xtest, Ytest))
 
     GBC = GBDTClassifier(max_depth = 7, n_estimators = 100, learning_rate = 0.1, subsample = 0.85).fit(Xtrain, Ytrain)

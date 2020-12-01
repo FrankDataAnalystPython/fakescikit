@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../ML_API/.idea/ML_API.iml" filepath="$PROJECT_DIR$/../ML_API/.idea/ML_API.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../fakesklearn_api/.idea/ML_API.iml" filepath="$PROJECT_DIR$/../fakesklearn_api/.idea/ML_API.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/pythonProject.iml" filepath="$PROJECT_DIR$/.idea/pythonProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/../tmp_project/.idea/tmp_project.iml" filepath="$PROJECT_DIR$/../tmp_project/.idea/tmp_project.iml" />
     </modules>
