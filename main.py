@@ -38,7 +38,7 @@ if __name__ == '__main__':
     LogR = LogisticRegression(solver = 'newton', max_iter = 5000).fit(Xtrain, Ytrain)
     LogR_train_score, LogR_test_score = np.around(LogR.score(Xtrain, Ytrain), 2), np.around(LogR.score(Xtest, Ytest), 2)
 
-    Perp = Perceptron(gaussian_kernel=True, predict_probability=False).fit(Xtrain, Ytrain)
+    Perp = Perceptron(gaussian_kernel=True).fit(Xtrain, Ytrain)
     Perp_train_score, Perp_test_score = np.around(Perp.score(Xtrain, Ytrain), 2), np.around(Perp.score(Xtest, Ytest), 2)
 
     RFC = RandomForestClassifier(max_depth = 5, n_estimators = 100, subsample = 0.85).fit(Xtrain, Ytrain)

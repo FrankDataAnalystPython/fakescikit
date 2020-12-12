@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import accuracy_score
 import copy
+from .common_tools import OneVsOneClassifier
 
 # When setting paramters, name must be the same
 # e.g. max_depth is a parameters in __init__
@@ -15,6 +16,7 @@ import copy
 # could not do different names!!!!
 # e.g. the following is wrong
 # self.max_D = max_depth
+
 class _SVC(BaseEstimator):
     def __init__(self, gamma=1e-2,
                  tol=1e-3, epsilon=1e-3,
@@ -214,7 +216,7 @@ class _SVC(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class SVC(BaseEstimator):
+class SVC(BaseEstimator, OneVsOneClassifier):
     def __init__(self, gamma=1e-2,
                  tol=1e-3, epsilon=1e-3,
                  gaussian_kernel=True,
@@ -233,67 +235,41 @@ class SVC(BaseEstimator):
         self.normalize = normalize
         self.binary = True
 
-    def init_params(self, X, Y):
-        if len(np.unique(Y)) > 2:
-            self.predict_probability = True
-            self.binary = False
-            if len(Y.shape) == 1:
-                self.onehot = OneHotEncoder(sparse = False).fit(Y.reshape(-1, 1))
-                self.Y_ = self.onehot.transform(Y.reshape(-1, 1))
-
         estimator_params = ('gamma', 'tol', 'epsilon', 'gaussian_kernel', 'max_iter', 'C',
                             'predict_probability', 'normalize')
         self.base_estimator_ = _SVC(**{p: getattr(self, p) for p in estimator_params})
 
-    def fit(self, X, Y):
-        self.init_params(X, Y)
-        if self.binary:
-            return self.base_estimator_.fit(X, Y)
-        self.base_model_list = [copy.deepcopy(self.base_estimator_.fit(X, Y_class)) for Y_class in self.Y_.T]
-        return self
-
-    def predict_proba(self, X):
-        Y_pred_proba = np.array(np.hstack([model.predict_proba(X)[:, -1].reshape(-1, 1) for model in self.base_model_list]))
-        row_sum = Y_pred_proba.sum(axis = 1).reshape(-1, 1)
-        return Y_pred_proba/row_sum
-
-    def predict(self, X):
-        Y_pred_proba = self.predict_proba(X)
-        return Y_pred_proba.argmax(axis = 1)
-
-    def score(self, X, Y):
-        Y_pred = self.predict(X)
-        return accuracy_score(Y, Y_pred)
-
 if __name__ == '__main__':
     # data = load_breast_cancer()
-    # data = load_wine()
+    data = load_wine()
     # data = load_digits(n_class = 3)
-    data = load_iris()
+    # data = load_iris()
     X = data['data']
     Y = data['target']
     Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3,random_state=42)
 
     # random_state = 10, last one is very high
-    model = SVC(gaussian_kernel=False, predict_probability=False, normalize=False)
-    model.fit(Xtrain, Ytrain)
-    print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
-
-    model_std = SVC(gaussian_kernel=False, predict_probability=False, normalize=True)
-    model_std.fit(Xtrain, Ytrain)
-    print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
-    model = SVC(gaussian_kernel=False, predict_probability=True, normalize=False)
-    model.fit(Xtrain, Ytrain)
-    print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
-    model_std = SVC(gaussian_kernel=False, predict_probability=True, normalize=True)
-    model_std.fit(Xtrain, Ytrain)
-    print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
-    model = SVC(gaussian_kernel=True, predict_probability=True, normalize=False)
-    model.fit(Xtrain, Ytrain)
-    print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
-
+    # model = SVC(gaussian_kernel=False, predict_probability=False, normalize=False)
+    # model.fit(Xtrain, Ytrain)
+    # print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
+    #
+    # model_std = SVC(gaussian_kernel=False, predict_probability=False, normalize=True)
+    # model_std.fit(Xtrain, Ytrain)
+    # print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
+    # model = SVC(gaussian_kernel=False, predict_probability=True, normalize=False)
+    # model.fit(Xtrain, Ytrain)
+    # print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
+    # model_std = SVC(gaussian_kernel=False, predict_probability=True, normalize=True)
+    # model_std.fit(Xtrain, Ytrain)
+    # print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
+    # model = SVC(gaussian_kernel=True, predict_probability=True, normalize=False)
+    # model.fit(Xtrain, Ytrain)
+    # print(model.score(Xtrain, Ytrain), model.score(Xtest, Ytest))
+    #
     model_std = SVC(gaussian_kernel=True, predict_probability=True, normalize=True)
     model_std.fit(Xtrain, Ytrain)
     print(model_std.score(Xtrain, Ytrain), model_std.score(Xtest, Ytest))
+
+
 
     print('done')

@@ -4,9 +4,9 @@ from sklearn.base import BaseEstimator
 from sklearn.metrics import r2_score, accuracy_score
 from sklearn.datasets import load_boston, load_breast_cancer, load_digits, load_wine
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelBinarizer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import LogisticRegression as sklearn_LogisticRegression
-from .common_tools import OneVsOneClassifier
+import copy
 
 class LinearRegression(BaseEstimator):
     def __init__(self, fit_intercept=True):
@@ -228,7 +228,7 @@ class _LogisticRegression(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class LogisticRegression(BaseEstimator, OneVsOneClassifier):
+class LogisticRegression(BaseEstimator):
     def __init__(self,
                  tol = 1e-4, C = 1, fit_intercept = True, max_iter = 5000,
                  learning_rate = 0.1, solver = 'sag'
@@ -241,16 +241,47 @@ class LogisticRegression(BaseEstimator, OneVsOneClassifier):
         self.learning_rate = learning_rate
         self.solver = solver
         self.binary = True
+
+
+    def init_params(self, X, Y):
+        if len(np.unique(Y)) > 2:
+            self.binary = False
+            if len(Y.shape) == 1:
+                self.onehot = OneHotEncoder(sparse = False).fit(Y.reshape(-1, 1))
+                self.Y_ = self.onehot.transform(Y.reshape(-1, 1))
+
         estimator_params = ("tol", "C", "fit_intercept",
                             "max_iter", "learning_rate",
                             "solver")
         self.base_estimator_ = _LogisticRegression(**{p: getattr(self, p) for p in estimator_params})
+
+
+    def fit(self, X, Y):
+        self.init_params(X, Y)
+        if self.binary:
+            return self.base_estimator_.fit(X, Y)
+        self.base_model_list = [copy.deepcopy(self.base_estimator_.fit(X, Y_class)) for Y_class in self.Y_.T]
+        return self
+
+    def predict_proba(self, X):
+        Y_pred_proba = np.array(np.hstack([model.predict_proba(X)[:, -1].reshape(-1,1) for model in self.base_model_list]))
+        row_sum = Y_pred_proba.sum(axis = 1).reshape(-1,1)
+        return Y_pred_proba/row_sum
+
+    def predict(self, X):
+        Y_pred_proba = self.predict_proba(X)
+        return Y_pred_proba.argmax(axis = 1)
+
+    def score(self, X, Y):
+        Y_pred = self.predict(X)
+        return accuracy_score(Y, Y_pred)
 
 class _Perceptron(BaseEstimator):
     def __init__(self, gaussian_kernel=True,
                  normalize = True,
                  max_iter = 500,
                  gamma = 1e-2,
+                 predict_probability=True,
                  Log_model = 'sklearn'
                  ):
         super().__init__()
@@ -258,6 +289,7 @@ class _Perceptron(BaseEstimator):
         self.normalize = normalize
         self.max_iter = max_iter
         self.gamma = gamma
+        self.predict_probability = predict_probability
         self.Log_model = Log_model
 
     def init_params(self, X, Y):
@@ -306,13 +338,14 @@ class _Perceptron(BaseEstimator):
                 break
             self.a[missing_index] += 1
 
-        X_log = self.decision_function(self.X).reshape(-1, 1)
-        self.std = StandardScaler().fit(X_log)
-        X_log = self.std.transform(X_log)
-        if self.Log_model == 'sklearn':
-            self.logistic_model = sklearn_LogisticRegression(solver='lbfgs').fit(X_log, self.Y)
-        elif self.Log_model == 'fakesklearn':
-            self.logistic_model = LogisticRegression(solver='newton').fit(X_log, self.Y)
+        if self.predict_probability:
+            X_log = self.decision_function(self.X).reshape(-1, 1)
+            self.std = StandardScaler().fit(X_log)
+            X_log = self.std.transform(X_log)
+            if self.Log_model == 'sklearn':
+                self.logistic_model = sklearn_LogisticRegression(solver='lbfgs').fit(X_log, self.Y)
+            elif self.Log_model == 'fakesklearn':
+                self.logistic_model = LogisticRegression(solver='newton').fit(X_log, self.Y)
         self.steps = steps
         return self
 
@@ -332,19 +365,25 @@ class _Perceptron(BaseEstimator):
         return self.logistic_model.predict_proba(X_log)
 
     def predict(self, X):
-        Y_pred_proba = self.predict_proba(X)
-        return Y_pred_proba.argmax(axis = 1)
+        if self.predict_probability:
+            Y_pred_proba = self.predict_proba(X)
+            return Y_pred_proba.argmax(axis = 1)
+
+        Y_pred = np.sign(self.decision_function(X))
+        Y_pred[Y_pred == -1] = 0
+        return Y_pred
 
     def score(self, X, Y):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class Perceptron(BaseEstimator, OneVsOneClassifier):
+class Perceptron(BaseEstimator):
     def __init__(self,
                  gaussian_kernel=True,
                  normalize=True,
                  max_iter=500,
                  gamma=1e-2,
+                 predict_probability=True,
                  Log_model='sklearn'
                  ):
         super().__init__()
@@ -352,12 +391,43 @@ class Perceptron(BaseEstimator, OneVsOneClassifier):
         self.normalize = normalize
         self.max_iter = max_iter
         self.gamma = gamma
+        self.predict_probability = predict_probability
         self.Log_model = Log_model
-        estimator_params = ("gaussian_kernel", "normalize", "max_iter",
-                            "gamma", "Log_model")
-        self.base_estimator_ = _Perceptron(**{p: getattr(self, p) for p in estimator_params})
         self.binary = True
 
+    def init_params(self, X, Y):
+        if len(np.unique(Y)) > 2:
+            self.predict_probability = True
+            self.binary = False
+            if len(Y.shape) == 1:
+                self.onehot = OneHotEncoder(sparse = False).fit(Y.reshape(-1, 1))
+                self.Y_ = self.onehot.transform(Y.reshape(-1, 1))
+
+        estimator_params = ("gaussian_kernel", "normalize", "max_iter",
+                            "gamma", "predict_probability",
+                            "Log_model")
+        self.base_estimator_ = _Perceptron(**{p: getattr(self, p) for p in estimator_params})
+
+    def fit(self, X, Y):
+        self.init_params(X, Y)
+        if self.binary:
+            return self.base_estimator_.fit(X, Y)
+        self.base_model_list = [copy.deepcopy(self.base_estimator_.fit(X, Y_class)) for Y_class in self.Y_.T]
+        return self
+
+    def predict_proba(self, X):
+        Y_pred_proba = np.array(np.hstack([model.predict_proba(X)[:, -1].reshape(-1,1) for model in self.base_model_list]))
+        row_sum = Y_pred_proba.sum(axis = 1).reshape(-1,1)
+        return Y_pred_proba/row_sum
+
+    def predict(self, X):
+        Y_pred_proba = self.predict_proba(X)
+        return Y_pred_proba.argmax(axis = 1)
+
+
+    def score(self, X, Y):
+        Y_pred = self.predict(X)
+        return accuracy_score(Y, Y_pred)
 
 
 if __name__ == '__main__':

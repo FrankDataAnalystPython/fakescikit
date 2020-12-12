@@ -7,6 +7,7 @@ fakescikit.egg-info/SOURCES.txt
 fakescikit.egg-info/dependency_links.txt
 fakescikit.egg-info/top_level.txt
 fakesklearn/__init__.py
+fakesklearn/common_tools.py
 fakesklearn/ensemble.py
 fakesklearn/linear_model.py
 fakesklearn/svm.py

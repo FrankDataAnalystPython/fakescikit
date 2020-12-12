@@ -10,8 +10,8 @@ from sklearn.metrics import r2_score, accuracy_score
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer, load_boston
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import LogisticRegression
+from .common_tools import OneVsOneClassifier
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -264,7 +264,7 @@ class _GBDTClassifier(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class GBDTClassifier(BaseEstimator):
+class GBDTClassifier(BaseEstimator, OneVsOneClassifier):
     def __init__(self,
                  learning_rate=0.1,
                  n_estimators=100,
@@ -302,15 +302,6 @@ class GBDTClassifier(BaseEstimator):
         self.max_leaf_nodes = max_leaf_nodes
         self.presort = presort
         self.binary = True
-
-    def init_params(self, X, Y):
-        if len(np.unique(Y)) > 2:
-            self.predict_probability = True
-            self.binary = False
-            if len(Y.shape) == 1:
-                self.onehot = OneHotEncoder(sparse = False).fit(Y.reshape(-1, 1))
-                self.Y_ = self.onehot.transform(Y.reshape(-1, 1))
-
         estimator_params = ("criterion", "max_depth", "min_samples_split",
                             "min_samples_leaf", "min_weight_fraction_leaf",
                             "max_features", "max_leaf_nodes",
@@ -318,27 +309,6 @@ class GBDTClassifier(BaseEstimator):
                             "random_state", "ccp_alpha")
 
         self.base_estimator_ = _GBDTClassifier(**{p: getattr(self, p) for p in estimator_params})
-
-    def fit(self, X, Y):
-        self.init_params(X, Y)
-        if self.binary:
-            return self.base_estimator_.fit(X, Y)
-        self.base_model_list = [copy.deepcopy(self.base_estimator_.fit(X, Y_class)) for Y_class in self.Y_.T]
-        return self
-
-    def predict_proba(self, X):
-        Y_pred_proba = np.array(np.hstack([model.predict_proba(X)[:, -1].reshape(-1,1) for model in self.base_model_list]))
-        row_sum = Y_pred_proba.sum(axis = 1).reshape(-1,1)
-        return Y_pred_proba/row_sum
-
-    def predict(self, X):
-        Y_pred_proba = self.predict_proba(X)
-        return Y_pred_proba.argmax(axis = 1)
-
-
-    def score(self, X, Y):
-        Y_pred = self.predict(X)
-        return accuracy_score(Y, Y_pred)
 
 class RandomForestRegressor(BaseEstimator):
     def __init__(self,
@@ -349,11 +319,11 @@ class RandomForestRegressor(BaseEstimator):
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_depth=3,
+                 max_depth=None,
                  min_impurity_decrease=0.,
                  min_impurity_split=None,
                  random_state=None,
-                 max_features=None,
+                 max_features='sqrt',
                  max_leaf_nodes=None,
                  presort='deprecated',
                  ccp_alpha=0.0,
@@ -434,11 +404,11 @@ class RandomForestClassifier(BaseEstimator):
                  min_samples_split=2,
                  min_samples_leaf=1,
                  min_weight_fraction_leaf=0.,
-                 max_depth=5,
+                 max_depth=None,
                  min_impurity_decrease=0.,
                  min_impurity_split=None,
                  random_state=None,
-                 max_features=None,
+                 max_features='sqrt',
                  max_leaf_nodes=None,
                  presort='deprecated',
                  ):
@@ -613,7 +583,7 @@ class _AdaBoostClassifier(BaseEstimator):
         Y_pred = self.predict(X)
         return accuracy_score(Y, Y_pred)
 
-class AdaBoostClassifier(BaseEstimator):
+class AdaBoostClassifier(BaseEstimator, OneVsOneClassifier):
     def __init__(self,
                  n_estimators=100,
                  subsample=1.0,
@@ -647,15 +617,6 @@ class AdaBoostClassifier(BaseEstimator):
         self.max_leaf_nodes = max_leaf_nodes
         self.presort = presort
         self.binary = True
-
-    def init_params(self, X, Y):
-        if len(np.unique(Y)) > 2:
-            self.predict_probability = True
-            self.binary = False
-            if len(Y.shape) == 1:
-                self.onehot = OneHotEncoder(sparse = False).fit(Y.reshape(-1, 1))
-                self.Y_ = self.onehot.transform(Y.reshape(-1, 1))
-
         estimator_params = ("criterion", "max_depth", "min_samples_split",
                             "min_samples_leaf", "min_weight_fraction_leaf",
                             "max_features", "max_leaf_nodes",
@@ -663,27 +624,6 @@ class AdaBoostClassifier(BaseEstimator):
                             "random_state")
 
         self.base_estimator_ = _AdaBoostClassifier(**{p: getattr(self, p) for p in estimator_params})
-
-    def fit(self, X, Y):
-        self.init_params(X, Y)
-        if self.binary:
-            return self.base_estimator_.fit(X, Y)
-        self.base_model_list = [copy.deepcopy(self.base_estimator_.fit(X, Y_class)) for Y_class in self.Y_.T]
-        return self
-
-    def predict_proba(self, X):
-        Y_pred_proba = np.array(np.hstack([model.predict_proba(X)[:, -1].reshape(-1,1) for model in self.base_model_list]))
-        row_sum = Y_pred_proba.sum(axis = 1).reshape(-1,1)
-        return Y_pred_proba/row_sum
-
-    def predict(self, X):
-        Y_pred_proba = self.predict_proba(X)
-        return Y_pred_proba.argmax(axis = 1)
-
-
-    def score(self, X, Y):
-        Y_pred = self.predict(X)
-        return accuracy_score(Y, Y_pred)
 
 
 if __name__ == '__main__':
