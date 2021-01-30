@@ -627,6 +627,7 @@ class AdaBoostClassifier(BaseEstimator, OneVsOneClassifier):
 
 
 if __name__ == '__main__':
+    from common_tools import OneVsOneClassifier
     boston = load_boston()
     X = boston['data']
     Y = boston['target']
